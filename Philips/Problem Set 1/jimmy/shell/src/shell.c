@@ -1,3 +1,4 @@
+
 #include <stdio.h>	// fgets()
 #include <stdlib.h>	// EXIT_FAILURE, EXIT_SUCCESS
 #include <string.h>	// strcmp() 
@@ -219,12 +220,12 @@ int pipe_and_fork(enum cmd_pos pos, char* argv[], int left_pipe_read_fd) {
 				{
 					close(new_pipe[1]);
 					close(new_pipe[0]);
-					new_pipe[0] = dup(STDOUT_FILENO);
+					//new_pipe[0] = dup(STDOUT_FILENO);
 				}
 				else
 				{
-					new_pipe[0] = dup(STDOUT_FILENO);
-					new_pipe[1] = dup(STDIN_FILENO);
+					//new_pipe[0] = dup(STDOUT_FILENO);
+					//new_pipe[1] = dup(STDIN_FILENO);
 				}
       
     

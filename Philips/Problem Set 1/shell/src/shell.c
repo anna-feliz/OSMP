@@ -1,3 +1,4 @@
+
 #include <stdio.h>	// fgets()
 #include <stdlib.h>	// EXIT_FAILURE, EXIT_SUCCESS
 #include <string.h>	// strcmp() 
@@ -76,16 +77,21 @@ void run_command(char* argv[]) {
  * You must add code at various places, see TODO comments.
  */
 void child_command(enum cmd_pos pos, char* argv[], int left_pipe_read_fd, int right_pipe[]) {
+<<<<<<< HEAD:Philips/Problem Set 1/shell/src/shell.c
 
   // TODO: Register a the sigpipe_handlner signal handler in order to detect if we 
   //       make any misstakes and receives a SIGPIPE.
 
   signal(SIGPIPE, sigpipe_handler);
   
+=======
+	signal(SIGPIPE, sigpipe_handler);
+>>>>>>> 8774a21d5cd17405969134de27b600ed03efb0c5:jimmy/shell/src/shell.c~
   DBG("CHILD  <%ld> %s left_pipe_read_fd = %d, right_pipe_read_fd = %d, right_pipe_write_fd = %d\n", 
       (long) getpid(), argv[0], left_pipe_read_fd, right_pipe[0], right_pipe[1]);
   
   // REMEMBER: The child inherits all open file descriptors from the parent. 
+<<<<<<< HEAD:Philips/Problem Set 1/shell/src/shell.c
   
   // TODO: Close descritors if necessary. Redirect STDIN and STDOUT if necessary. 
   
@@ -102,6 +108,8 @@ void child_command(enum cmd_pos pos, char* argv[], int left_pipe_read_fd, int ri
     dup2(left_pipe_read_fd, STDIN_FILENO);
   }
   
+=======
+>>>>>>> 8774a21d5cd17405969134de27b600ed03efb0c5:jimmy/shell/src/shell.c~
   // Now we're ready to run the command. 
   run_command(argv);
 }
@@ -179,6 +187,7 @@ int pipe_and_fork(enum cmd_pos pos, char* argv[], int left_pipe_read_fd) {
 
   
   DBG("pos = %s\n", pos2str(pos));
+<<<<<<< HEAD:Philips/Problem Set 1/shell/src/shell.c
   
   // TODO: The pipe must be created before the fork(), but only create
   //       a pipe if needed (use pos to make decision).
@@ -187,6 +196,18 @@ int pipe_and_fork(enum cmd_pos pos, char* argv[], int left_pipe_read_fd) {
   }  
 
   
+=======
+		
+		if(pos != single)
+		{
+			if(pipe(new_pipe) == -1)
+			{
+				perror("Failed to create pipe.\n");
+				exit(EXIT_FAILURE);
+			}
+		}
+		
+>>>>>>> 8774a21d5cd17405969134de27b600ed03efb0c5:jimmy/shell/src/shell.c~
   // Once the pipe is created we can fork a child process for the command. 
   
   pid_t pid = fork();
@@ -194,10 +215,24 @@ int pipe_and_fork(enum cmd_pos pos, char* argv[], int left_pipe_read_fd) {
   switch(pid) {
   
   case 0: // == CHILD ==
-    
     DBG("CHILD  <%ld> %s says HELLO!\n", (long) getpid(), argv[0]);
-    
-    // 
+				if(pos == middle)
+				{
+					close(new_pipe[0]);
+					dup2(left_pipe_read_fd, STDIN_FILENO);
+					dup2(new_pipe[1], STDOUT_FILENO);
+				}
+				else if(pos == first)
+				{
+					close(new_pipe[0]);
+					dup2(new_pipe[1], STDOUT_FILENO);
+				}
+				else if(pos == last)
+				{
+					close(new_pipe[0]);
+					close(new_pipe[1]);
+					dup2(left_pipe_read_fd, STDIN_FILENO);
+				}
     child_command(pos, argv, left_pipe_read_fd, new_pipe);
     
     // This will never be reached when you have sucessfully managed to call execv().
@@ -210,8 +245,9 @@ int pipe_and_fork(enum cmd_pos pos, char* argv[], int left_pipe_read_fd) {
     
   default: // == PARENT ==
     
-    DBG("PARENT <%ld> just forked child <%ld> %s\n", getpid(), pid, argv[0]);
+			DBG("PARENT <%ld> just forked child <%ld> %s\n", (long int)getpid(), (long int)pid, argv[0]);
     
+<<<<<<< HEAD:Philips/Problem Set 1/shell/src/shell.c
     // TODO: Close descriptors if necessary. 
     if (pos == first){
       close (new_pipe[WRITE]);
@@ -228,6 +264,28 @@ int pipe_and_fork(enum cmd_pos pos, char* argv[], int left_pipe_read_fd) {
       new_pipe[READ] = dup(STDOUT_FILENO); // Varför detta?
       new_pipe[WRITE] = dup(STDIN_FILENO); // Varför detta?
     }
+=======
+				if(pos == first)
+				{
+					close(new_pipe[1]);
+				}
+				else if(pos == middle)
+				{
+					close(new_pipe[1]);
+				}
+				else if(pos == last)
+				{
+					close(new_pipe[1]);
+					close(new_pipe[0]);
+					//new_pipe[0] = dup(STDOUT_FILENO);
+				}
+				else
+				{
+					//new_pipe[0] = dup(STDOUT_FILENO);
+					//new_pipe[1] = dup(STDIN_FILENO);
+				}
+      
+>>>>>>> 8774a21d5cd17405969134de27b600ed03efb0c5:jimmy/shell/src/shell.c~
     
     
     // Return the read descriptor of the newly created pipe. This
@@ -332,7 +390,7 @@ int main() {
       
       
       while (argv[i] != NULL) {
-	DBG("         argv[%d] @ [0x%x] = \"%s\"\n", i, (unsigned int) argv[i], argv[i]);
+							DBG("         argv[%d] @ [0x%x] = \"%s\"\n", i, (unsigned int)((unsigned long int)argv[i]), argv[i]);
 	i++;
       }
       
@@ -351,11 +409,12 @@ int main() {
     
     
     DBG("\nAfter calling next_command(), line [0x%X]  ==>%s<==\n",  
-	(unsigned int) &line_buffer, line_buffer);
+								(unsigned int) ((unsigned long int)&line_buffer), line_buffer);
     
     
     // The parent goes here after after all children have been 
     // created for the command. 
+<<<<<<< HEAD:Philips/Problem Set 1/shell/src/shell.c
     
     // TODO: Make sure shell doesn't print a new prompt until 
     // all the command processes (children) have terminated.
@@ -364,5 +423,13 @@ int main() {
       wait(NULL);
     }
     line_nr = children = 0; //Vad händer här?
+=======
+    int i;
+				for(i = 0; i < children; i++)
+				{
+					wait(NULL);
+				}
+				line_nr = children = 0;    
+>>>>>>> 8774a21d5cd17405969134de27b600ed03efb0c5:jimmy/shell/src/shell.c~
   } // end while(1)
 } // end of main()
