@@ -145,8 +145,8 @@ main()
     long int i;
 
     sem_init(&fullSem, 0, 0); // Håller koll hur många element vi har i buffern
-    sem_init(&emptySem, 0, BUFFER_SIZE); // håller koll hur många tomma platser vi
-                                             // har i buffern    
+    sem_init(&emptySem, 0, BUFFER_SIZE); // håller koll hur många tomma platser vi har i buffern    
+                                              
     sem_init(&bufferSem, 0, 1);// Agerar som mutex 
     
     
