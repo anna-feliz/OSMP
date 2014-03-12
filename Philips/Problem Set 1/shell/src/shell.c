@@ -12,7 +12,8 @@
 
 #define MAX_ARGV_SIZE 10
 #define COMMAND_LINE_BUFFER_SIZE 1024
-
+#define READ 0
+#define WRITE 1
 
 
 #define DO_DEBUG 0  // To enable   debug printouts set this to 1. 
@@ -76,15 +77,42 @@ void run_command(char* argv[]) {
  * You must add code at various places, see TODO comments.
  */
 void child_command(enum cmd_pos pos, char* argv[], int left_pipe_read_fd, int right_pipe[]) {
+<<<<<<< HEAD:Philips/Problem Set 1/shell/src/shell.c
+
+  // TODO: Register a the sigpipe_handlner signal handler in order to detect if we 
+  //       make any misstakes and receives a SIGPIPE.
+
+  signal(SIGPIPE, sigpipe_handler);
+  
+=======
 	signal(SIGPIPE, sigpipe_handler);
+>>>>>>> 8774a21d5cd17405969134de27b600ed03efb0c5:jimmy/shell/src/shell.c~
   DBG("CHILD  <%ld> %s left_pipe_read_fd = %d, right_pipe_read_fd = %d, right_pipe_write_fd = %d\n", 
       (long) getpid(), argv[0], left_pipe_read_fd, right_pipe[0], right_pipe[1]);
   
   // REMEMBER: The child inherits all open file descriptors from the parent. 
+<<<<<<< HEAD:Philips/Problem Set 1/shell/src/shell.c
+  
+  // TODO: Close descritors if necessary. Redirect STDIN and STDOUT if necessary. 
+  
+  if (pos == first){
+    close(right_pipe[READ]);
+    dup2(right_pipe[WRITE], STDOUT_FILENO);
+  
+  } else if (pos == middle){
+    close(right_pipe[READ]);
+    dup2(right_pipe[WRITE], STDOUT_FILENO);
+    dup2(left_pipe_read_fd, STDIN_FILENO);
+  
+  } else if (pos == last){
+    dup2(left_pipe_read_fd, STDIN_FILENO);
+  }
+  
+=======
+>>>>>>> 8774a21d5cd17405969134de27b600ed03efb0c5:jimmy/shell/src/shell.c~
   // Now we're ready to run the command. 
   run_command(argv);
 }
-
 
 /**
  * DESCRIPTION: 
@@ -159,6 +187,16 @@ int pipe_and_fork(enum cmd_pos pos, char* argv[], int left_pipe_read_fd) {
 
   
   DBG("pos = %s\n", pos2str(pos));
+<<<<<<< HEAD:Philips/Problem Set 1/shell/src/shell.c
+  
+  // TODO: The pipe must be created before the fork(), but only create
+  //       a pipe if needed (use pos to make decision).
+  if (pos == first || pos == middle){
+    pipe(new_pipe); 
+  }  
+
+  
+=======
 		
 		if(pos != single)
 		{
@@ -169,6 +207,7 @@ int pipe_and_fork(enum cmd_pos pos, char* argv[], int left_pipe_read_fd) {
 			}
 		}
 		
+>>>>>>> 8774a21d5cd17405969134de27b600ed03efb0c5:jimmy/shell/src/shell.c~
   // Once the pipe is created we can fork a child process for the command. 
   
   pid_t pid = fork();
@@ -208,6 +247,24 @@ int pipe_and_fork(enum cmd_pos pos, char* argv[], int left_pipe_read_fd) {
     
 			DBG("PARENT <%ld> just forked child <%ld> %s\n", (long int)getpid(), (long int)pid, argv[0]);
     
+<<<<<<< HEAD:Philips/Problem Set 1/shell/src/shell.c
+    // TODO: Close descriptors if necessary. 
+    if (pos == first){
+      close (new_pipe[WRITE]);
+    }
+    else if (pos == middle){
+      close (new_pipe[WRITE]);
+    }
+    else if (pos == last){
+      close(new_pipe[READ]);
+      close(new_pipe[WRITE]);
+      new_pipe[READ] = dup(STDOUT_FILENO); // Varför gör vi detta?
+    }
+    else {
+      new_pipe[READ] = dup(STDOUT_FILENO); // Varför detta?
+      new_pipe[WRITE] = dup(STDIN_FILENO); // Varför detta?
+    }
+=======
 				if(pos == first)
 				{
 					close(new_pipe[1]);
@@ -228,6 +285,7 @@ int pipe_and_fork(enum cmd_pos pos, char* argv[], int left_pipe_read_fd) {
 					//new_pipe[1] = dup(STDIN_FILENO);
 				}
       
+>>>>>>> 8774a21d5cd17405969134de27b600ed03efb0c5:jimmy/shell/src/shell.c~
     
     
     // Return the read descriptor of the newly created pipe. This
@@ -356,11 +414,22 @@ int main() {
     
     // The parent goes here after after all children have been 
     // created for the command. 
+<<<<<<< HEAD:Philips/Problem Set 1/shell/src/shell.c
+    
+    // TODO: Make sure shell doesn't print a new prompt until 
+    // all the command processes (children) have terminated.
+    int i;
+    for (i = 0; i < children; i++){
+      wait(NULL);
+    }
+    line_nr = children = 0; //Vad händer här?
+=======
     int i;
 				for(i = 0; i < children; i++)
 				{
 					wait(NULL);
 				}
 				line_nr = children = 0;    
+>>>>>>> 8774a21d5cd17405969134de27b600ed03efb0c5:jimmy/shell/src/shell.c~
   } // end while(1)
 } // end of main()
