@@ -1,10 +1,10 @@
 -module(splitLists).
 -export([splitLists/3, splitLists/4]).
-
+-include_lib("eunit/include/eunit.hrl").
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %                              splitLists/3                               %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
+-include_lib("eunit/include/eunit.hrl").
 
 -spec splitLists(A, B, N) -> list() when
       A::list(),
@@ -23,9 +23,15 @@ splitLists(A, B, N) ->
 	    NewA = A,
 	    NewB = B
     end,
-    LengthOfSublists = length(NewA) div N,
-    ALists = splitLists(NewA, LengthOfSublists, [], N),
-    BLists = splitLists(NewB, LengthOfSublists, [], N),
+    if 
+	length(NewA) div N == 0 ->
+	    ALists = splitLists(NewA, 1, [], length(NewA)),
+	    BLists = splitLists(NewB, 1, [], length(NewA));	
+	length(NewA) div N /= 0 ->
+	    LengthOfSublists = length(NewA) div N,
+	    ALists = splitLists(NewA, LengthOfSublists, [], N),
+	    BLists = splitLists(NewB, LengthOfSublists, [], N)
+    end,
     lists:zip(ALists, BLists).
 
 
@@ -53,5 +59,3 @@ addZeros(N, List) when length(List) == N ->
     List;
 addZeros(N, List) ->
     addZeros(N, [0|List]).
-
-
