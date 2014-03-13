@@ -8,20 +8,27 @@
 %% To use EUnit we must include this:
 -include_lib("eunit/include/eunit.hrl").
 
-%@doc 
+-spec start(A, B, Base) -> ok when
+      A::integer(),
+      B::integer(),
+      Base::integer().
+
+%@doc Takes two integers A and B, converts them to base Base and adds them together. 
+%@doc Sideeffect: prints the addition of A and B
 start (A, B, Base) ->
     start (A, B, Base, []).
 
 
-%doc returns ok. 
-% A, B are lists with 1 digit integers to be added together, Base is in which number base A and B are represented, Options is the options that can be chosen.   
+%@doc returns ok. 
+%@doc Takes two integers A and B, converts them to base Base and adds them together. 
+%@doc Approach to this task is chosen by Options.
+%@doc Sideeffect: prints the addition of A and B
 %option: speculative, {sleep, Min, Max}, {numberOfLists, N} 
 -spec start(A, B, Base, Options) -> ok when 
       A::list(),
       B::list(),
       Base::integer(),
       Options::list().
-
 
 start (AInt, BInt, Base, Options) ->
     A = intToList(AInt, Base),    
@@ -36,7 +43,9 @@ start (AInt, BInt, Base, Options) ->
     end,
     ok.
 
-%startar en ny process med PID CollectPID, som arbetar med att samla ihop all data.
+
+%@doc Initiates the addition-actor-spawning.  
+%@ starts a new process which collects the data from the addition-actors
 -spec divideListsAndStart(A, B, Base, N, Speculative) -> ok when
       A::list(),
       B::list(),
@@ -45,17 +54,16 @@ start (AInt, BInt, Base, Options) ->
       Speculative::true | false.
 
 divideListsAndStart (A, B, Base, N, Speculative) ->
-    %io:format("A: ~p\nB: ~p\nN: ~p\n", [A, B, N]),
     Lists = splitLists(A, B, N),
-    %io:format("~p\n", [Lists]),
-    CollectPID = spawn(fun() -> collect(A, B, N, [], []) end),
+    CollectPID = spawn(fun() -> collect(A, B, N, [], [], Base) end),
     MyPID = self(),
     spawn(fun() -> spawn_actors (Lists, Base, CollectPID, Speculative, MyPID, MyPID) end),
     ok.
 
 
 
-%
+%@doc spawns new actors for each element in List. Performs addition on head of List.
+%@doc sends the addition data to collect. 
 -spec spawn_actors(List, Base, CollectPID, Speculative, ParentPID, SuperParentPID) -> ok when
       List::list(),
       Base::integer(),
@@ -64,8 +72,6 @@ divideListsAndStart (A, B, Base, N, Speculative) ->
       ParentPID::pid(),
       SuperParentPID::pid().
 spawn_actors ([], _Base, CollectPID, _Speculative, ParentPID, SuperParentPID) ->
-    %io:format("last link\n", []),
-
     case SuperParentPID == ParentPID of
 	false ->
 	    ParentPID ! {carry, 0};
@@ -96,16 +102,12 @@ spawn_actors ([H|T], Base, CollectPID, Speculative, ParentPID, SuperParentPID) -
 			false ->
 			    ParentPID ! {carry, Without_PartialCarryOut};
 			true ->
-			    %io:format("I am here"),
 			    CollectPID ! {carry, Without_PartialCarryOut}
 		    end
-		end;
+	    end;
 	false ->
-	    %io:format("\nBefore receive. H: ~p, T: ~p\n", [H, T]),
 	    receive
 		{carry, CarryIn} ->
-		    %io:format("hejsan\n", []),
-
 		    {ResultList, CarryOutList, PartialCarryOut} = addPartialSum:addPartialSum (H, Base, CarryIn),
 		    CollectPID ! {ResultList, CarryOutList},
 		    case SuperParentPID == ParentPID of
@@ -135,88 +137,91 @@ spawn_actors ([H|T], Base, CollectPID, Speculative, ParentPID, SuperParentPID) -
 isIn(Elem, List) ->
     isIn(Elem, List, 1).
 
-	-spec isIn(Elem, List, N) -> integer() | false when
-							Elem::speculative | sleep | numberOfLists,
-							List::list(),
-							N::integer().
+-spec isIn(Elem, List, N) -> integer() | false when
+      Elem::speculative | sleep | numberOfLists,
+      List::list(),
+      N::integer().
 
-	isIn(_Elem, [], _N) -> 
-					false;
-	isIn(Elem, [H|T], N) -> 
-					case speculative == H of
-		true -> 
-						case H == Elem of
-			true ->
-							true;
-			false ->
-							isIn(Elem, T, N+1)
-						end;
+isIn(_Elem, [], _N) -> 
+    false;
+isIn(Elem, [H|T], N) -> 
+    case speculative == H of
+	true -> 
+	    case H == Elem of
+		true ->
+		    true;
 		false ->
-						case (element(1, H) == Elem) of
-			true ->
-							N;
-			false ->
-							isIn(Elem, T, N+1)
-						end	 
-					end.
+		    isIn(Elem, T, N+1)
+	    end;
+	false ->
+	    case (element(1, H) == Elem) of
+		true ->
+		    N;
+		false ->
+		    isIn(Elem, T, N+1)
+	    end	 
+    end.
 
 
-	-spec intToList(N, Base) -> list() when
-							N::integer(),
-							Base::integer().
-
-	intToList(N, Base) ->
-					intToList(N, Base, []).
+-spec intToList(N, Base) -> list() when
+      N::integer(),
+      Base::integer().
 
 
-	-spec intToList(N, Base, List) -> list() when
-							N::integer(),
-							Base::integer(),
-							List::list().
-
-	intToList(0, _Base, List) ->
-					List;
-	intToList(N, Base, List) ->
-					intToList(N div Base, Base, [(N rem Base)|List]).
+%doc turns N into base Base and returns it as a list of integers.
+intToList(N, Base) ->
+    intToList(N, Base, []).
 
 
+-spec intToList(N, Base, List) -> list() when
+      N::integer(),
+      Base::integer(),
+      List::list().
 
-
-	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-	%                                collect/5                                %
-	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+intToList(0, _Base, List) ->
+    List;
+intToList(N, Base, List) ->
+    intToList(N div Base, Base, [(N rem Base)|List]).
 
 
 
-	%% @doc Receives Results and Carryout, appends it with new lists FinalResults and FinalCarryOut and returns it 
-	-spec collect(A, B, NumberOfListsToWaitFor, Results, CarryOut) -> {list(), list()} when 
-							A::list(),
-							B::list(),
-							NumberOfListsToWaitFor::integer(), 
-							Results::[integer()], 
-							CarryOut::[integer()]. 
 
-	collect(A, B, N, FinalResults, FinalCarryOut) ->
-					collect(A, B, N, FinalResults, FinalCarryOut, 0).
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+						%                                collect/5                                %
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-	-spec collect(A, B, NumberOfListsToWaitFor, Results, CarryOut, Count) -> {list(), list()} when 
-							A::list(),
-							B::list(),
-							NumberOfListsToWaitFor::integer(), 
-							Results::[integer()], 
-							CarryOut::[integer()],
-							Count::integer().
 
-	collect(A, B, N, FinalResults, FinalCarryOut, Count) when N >= Count ->
-					io:format("A: ~p~nB: ~p\nFinalResults: ~p~nFinalCarryOut: ~p~n", [A, B, FinalResults, FinalCarryOut]),
-					receive 
-		{carry, CarryOut} -> 
-						collect(A, B, N, FinalResults, [CarryOut|FinalCarryOut], Count); 
-		{Results, CarryOut} -> 
-	    collect(A, B, N, lists:append([Results, FinalResults]), lists:append([CarryOut, FinalCarryOut]), Count+1)
+
+%% @doc Receives Results and Carryout, appends it with new lists FinalResults and FinalCarryOut and returns it 
+-spec collect(A, B, NumberOfListsToWaitFor, Results, CarryOut, Base) -> {list(), list()} when 
+      A::list(),
+      B::list(),
+      NumberOfListsToWaitFor::integer(), 
+      Results::[integer()], 
+      CarryOut::[integer()],
+      Base::integer(). 
+
+collect(A, B, N, FinalResults, FinalCarryOut, Base) ->
+    collect(A, B, N, FinalResults, FinalCarryOut, 0, Base).
+
+-spec collect(A, B, NumberOfListsToWaitFor, Results, CarryOut, Count, Base) -> {list(), list()} when 
+      A::list(),
+      B::list(),
+      NumberOfListsToWaitFor::integer(), 
+      Results::[integer()], 
+      CarryOut::[integer()],
+      Count::integer(),
+      Base::integer().
+
+collect(A, B, N, FinalResults, FinalCarryOut, Count, Base) when N >= Count ->
+    receive 
+	{carry, CarryOut} -> 
+	    collect(A, B, N, [CarryOut|FinalResults], [CarryOut|FinalCarryOut], Count+1, Base); 
+	{Results, CarryOut} -> 
+	    collect(A, B, N, lists:append([Results, FinalResults]), lists:append([CarryOut, FinalCarryOut]), Count+1, Base)
     end; 
-collect(A, B, _NumberOfListsToWaitfor, Results, CarryOut, _Count) -> 
-				io:format("A: ~p ~nB: ~p \nResults: ~p~nCarryOut: ~p~n", [A, B, Results, CarryOut]).
+collect(A, B, _N, Results, CarryOut, _Count, Base)  -> 
+    print(A, B, Results, CarryOut, Base).
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -225,4 +230,13 @@ collect(A, B, _NumberOfListsToWaitfor, Results, CarryOut, _Count) ->
 
 intToList_test_() -> 
     [?_assertEqual([], intToList(0, 10)),
-     ?_assertEqual([1, 2, 3, 4], intToList(1234, 10))].
+     ?_assertEqual([1, 2, 3, 4], intToList(1234, 10)),
+     ?_assertEqual([1, 0, 0, 1], intToList(9, 2))].
+
+
+isIn_test() ->
+    [?assertMatch(true, isIn(speculative, [speculative, {numberOfLists, 4}])),
+     ?assertMatch(2, isIn(numberOfLists, [speculative, {numberOfLists, 4}])),
+     ?assertMatch(false, isIn(speculative, [{numberOfLists, 4}]))].
+    
+    %%?assertMatch(false, isIn(speculative, [speculative, {sleep, min, max}, {numberOfLists, 4}])).
