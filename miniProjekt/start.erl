@@ -42,50 +42,75 @@ divideListsAndStart (A, B, Base, N, Speculative) ->
     Lists = splitLists(A, B, N),
     io:format("~p\n", [Lists]),
     CollectPID = spawn(fun() -> collect(A, B, N, [], []) end),
-    spawn(fun() -> spawn_actors (Lists, Base, CollectPID, Speculative, self()) end),
+    MyPID = self(),
+    spawn(fun() -> spawn_actors (Lists, Base, CollectPID, Speculative, MyPID, MyPID) end),
     divideListAndStartok.
 
 
 
 %
--spec spawn_actors(List, Base, CollectPID, Speculative, ParentPID) -> ok when
+-spec spawn_actors(List, Base, CollectPID, Speculative, ParentPID, SuperParentPID) -> ok when
       List::list(),
       Base::integer(),
       CollectPID::pid(),
       Speculative:: true | false,
-      ParentPID::pid().
-spawn_actors ([], _Base, _CollectPID, _Speculative, ParentPID) ->
+      ParentPID::pid(),
+      SuperParentPID::pid().
+spawn_actors ([], _Base, CollectPID, _Speculative, ParentPID, SuperParentPID) ->
     io:format("last link\n", []),
-    ParentPID ! {carry, 0},
-    lastLinkok;
-spawn_actors ([H|T], Base, CollectPID, Speculative, ParentPID) ->
-    spawn(fun() -> spawn_actors (T, Base, CollectPID, Speculative, self()) end),
-    %case Speculative of 
-%	true ->
-%	    {With_ResultList, With_CarryOutList, With_PartialCarryOut} = addPartialSum:addPartialSum (H, Base, 1),
-%	    {Without_ResultList, Without_CarryOutList, Without_PartialCarryOut} = addPartialSum:addPartialSum (H, Base, 0),
-%	    receive
-%		{carry, 1} ->
-%		    CollectPID ! {With_ResultList, With_CarryOutList},
-%		    ParentPID ! {carry, With_PartialCarryOut};
-%		{carry, 0} ->
-%		    CollectPID ! {Without_ResultList, Without_CarryOutList},
-%		    ParentPID ! {carry, Without_PartialCarryOut}
-%	    end;
-%	false ->
-    io:format("\nBefore receive. H: ~p, T: ~p\n", [H, T]),
-    receive
-	{carry, CarryIn} ->
-	    io:format("hejsan\n", []),
 
-	    {ResultList, CarryOutList, PartialCarryOut} = addPartialSum:addPartialSum (H, Base, CarryIn),
-	    CollectPID ! {ResultList, CarryOutList},
-	    ParentPID ! {carry, PartialCarryOut};
-	_ ->
-	    io:format("Du är cool", [])
-    end
-						%    end
-	,
+    case SuperParentPID == ParentPID of
+	false ->
+	    ParentPID ! {carry, 0};
+	true ->
+	    CollectPID ! {carry, 0}
+    end,
+    lastLinkok;
+spawn_actors ([H|T], Base, CollectPID, Speculative, ParentPID, SuperParentPID) ->
+    MyPID = self(),
+    spawn(fun() -> spawn_actors (T, Base, CollectPID, Speculative, MyPID, SuperParentPID) end),
+    case Speculative of 
+	true ->
+	    {With_ResultList, With_CarryOutList, With_PartialCarryOut} = addPartialSum:addPartialSum (H, Base, 1),
+	    {Without_ResultList, Without_CarryOutList, Without_PartialCarryOut} = addPartialSum:addPartialSum (H, Base, 0),
+	    receive
+		{carry, 1} ->
+		    CollectPID ! {With_ResultList, With_CarryOutList},
+		    case SuperParentPID == ParentPID of
+			false ->
+			    ParentPID ! {carry, With_PartialCarryOut};	    
+			true ->
+			    CollectPID ! {carry, With_PartialCarryOut}
+		    end;
+
+		{carry, 0} ->
+		    CollectPID ! {Without_ResultList, Without_CarryOutList},
+		    case SuperParentPID == ParentPID of
+			false ->
+			    ParentPID ! {carry, Without_PartialCarryOut};
+			true ->
+			    io:format("I am here"),
+			    CollectPID ! {carry, Without_PartialCarryOut}
+		    end
+		end;
+	false ->
+	    io:format("\nBefore receive. H: ~p, T: ~p\n", [H, T]),
+	    receive
+		{carry, CarryIn} ->
+		    io:format("hejsan\n", []),
+
+		    {ResultList, CarryOutList, PartialCarryOut} = addPartialSum:addPartialSum (H, Base, CarryIn),
+		    CollectPID ! {ResultList, CarryOutList},
+		    case SuperParentPID == ParentPID of
+			false ->
+			    ParentPID ! {carry, PartialCarryOut};
+			true ->
+			    CollectPID ! {carry, PartialCarryOut}
+		    end;
+		_ ->
+		    io:format("Du är cool", [])
+	    end
+    end,
     spawnActorsok.
 
 
@@ -169,17 +194,28 @@ intToList(N, Base, List) ->
       Results::[integer()], 
       CarryOut::[integer()]. 
 
-collect(A, B, N, FinalResults, FinalCarryOut) when N < numberOfListsToWaitFor ->
+collect(A, B, N, FinalResults, FinalCarryOut) ->
+    collect(A, B, N, FinalResults, FinalCarryOut, 0).
+
+-spec collect(A, B, NumberOfListsToWaitFor, Results, CarryOut, Count) -> {list(), list()} when 
+      A::list(),
+      B::list(),
+      NumberOfListsToWaitFor::integer(), 
+      Results::[integer()], 
+      CarryOut::[integer()],
+      Count::integer().
+
+collect(A, B, N, FinalResults, FinalCarryOut, Count) when N >= Count ->
     io:format("A: ~p\nB: ~p\nFinalResults: ~p\nFinalCarryOut: ~p", [A, B, FinalResults, FinalCarryOut]),
-    receive {Results, CarryOut} -> 
-	    collect(A, B, N, lists:append([Results, FinalResults]), lists:append([CarryOut, FinalCarryOut])) 
+    receive 
+	{carry, CarryOut} -> 
+	    collect(A, B, N, FinalResults, [CarryOut|FinalCarryOut], Count); 
+	{Results, CarryOut} -> 
+	    io:format("I am here In the cool function\n"),
+	    collect(A, B, N, lists:append([Results, FinalResults]), lists:append([CarryOut, FinalCarryOut]), Count+1)
     end; 
-
-
-
-
-collect(A, B, _NumberOfListsToWaitfor, Results, CarryOut) -> 
-    io:format("~p \n~p \n~p\n ~p\n", [A, B, Results, CarryOut]).
+collect(A, B, _NumberOfListsToWaitfor, Results, CarryOut, _Count) -> 
+    io:format("A: ~p \nB: ~p \nResults: ~p\nCarryOut: ~p\n", [A, B, Results, CarryOut]).
 
 
 
