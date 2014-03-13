@@ -123,7 +123,7 @@ repeat(Char, N) ->
 
 intToChar(Int) when Int >= 0, Int =< 9 ->
     [Int+48];
-intToChar(Int) when Int >= 10, Int =< 15 -> %% ???
+intToChar(Int) when Int >= 10, Int =< 36 -> %% ???
     [Int+55];
 intToChar(_) ->
     erlang:error(error,nAN).
