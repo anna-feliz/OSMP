@@ -23,40 +23,32 @@
       Result :: list(),
       Carry :: list(),
       Base :: integer().
-      %% Int :: integer().
 
 print(A, B, Result, Carry, Base) ->
-    %% Rad 1 ska det printas en rad med carrys
-    %% Rad 2 ska vara "-"-tecken på samma ställen som carry-siffran är 1.
-    %% Rad 3 är det första talet, eller blir det snyggare att ta det längre???
-    %% Rad 4 är det andra talet, alternativt det kortare.
-    %% Rad 5 är ett plusteckan följt av |Result| antal "-"-tecken.
-    %% Rad 6 är svaret på additionen.
-    
-    %% Rad 0:
+    %% Line 1:
     printSpace(),
     io:format("Addition done in base: ~p", [Base]),
     printNewLine(),
 
-    %% Rad 1:
+    %% Line 2:
     printSpace(),
     printL1(Carry),
 
-    %% Rad 2:
+    %% Line 3:
     printSpace(),
     printL2(Carry),
 
-    %% Rad 3:
+    %% Line 4:
     printSpace(),
     printSpace(),
     printNum(A),
 
-    %% Rad 4:
+    %% Line 5:
     printSpace(),
     printSpace(),
     printNum(B),
     
-    %% Rad 5:
+    %% Line 6:
     io:format("+"),
     if length(Result) > length(A) ->
 	    do_nothing;
@@ -66,7 +58,7 @@ print(A, B, Result, Carry, Base) ->
     io:format(repeat($-, length(Result))),
     printNewLine(),
 
-    %% Rad 6:
+    %% Line 7:
     if length(Result) > length(A) ->
 	    do_nothing;
        length(Result) =< length(A) ->
@@ -75,11 +67,14 @@ print(A, B, Result, Carry, Base) ->
     printSpace(),
     printNum(Result).
 
+
 printSpace() ->
     io:format(" ").
 
+
 printNewLine() ->
     io:format("~n").
+
 
 printL1([])->
     io:format("~n");
@@ -92,6 +87,7 @@ printL1([H|T]) ->
 	    io:format("1"),
 	    printL1(T)
     end.
+
 
 printL2([]) ->
     io:format("~n");
@@ -117,9 +113,9 @@ printNum([H|T], _) ->
     printNum(T, 1).
 
 
-%% flytta till util.erl     
 repeat(Char, N) ->
     [Char || _ <- lists:seq(1,N)].
+
 
 intToChar(Int) when Int >= 0, Int =< 9 ->
     [Int+48];
