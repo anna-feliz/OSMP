@@ -5,6 +5,7 @@
 -import(print, [print/5]).
 -import(splitLists, [splitLists/3, splitLists/4]).
 
+%% To use EUnit we must include this:
 -include_lib("eunit/include/eunit.hrl").
 
 %@doc 
@@ -222,7 +223,6 @@ collect(A, B, _NumberOfListsToWaitfor, Results, CarryOut, _Count) ->
 %            Tests                       %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-add_All_test_() ->
-				[debugger:start(),
-					start(1230,0312,10)]
-				.
+intToList_test_() -> 
+    [?_assertEqual([], intToList(0, 10)),
+     ?_assertEqual([1, 2, 3, 4], intToList(1234, 10))].
