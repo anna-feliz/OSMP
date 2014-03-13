@@ -140,27 +140,22 @@ isIn(Elem, List) ->
 
 isIn(_Elem, [], _N) -> 
     false;
-isIn(Elem, [H|T], N) ->
-    case Elem of
-	speculative ->
-	    case H == speculative of
+isIn(Elem, [H|T], N) -> 
+    case speculative == H of
+	true -> 
+	    case H == Elem of
 		true ->
 		    true;
 		false ->
 		    isIn(Elem, T, N+1)
 	    end;
-	_ ->
-	    case speculative == H of
+	false ->
+	    case (element(1, H) == Elem) of
 		true ->
-		    isIn(Elem, T, N+1);
+		    N;
 		false ->
-		    case (element(1, H) == Elem) of
-			true ->
-			    N;
-			false ->
-			    isIn(Elem, T, N+1)
-		    end
-	    end
+		    isIn(Elem, T, N+1)
+	    end	 
     end.
 
 
