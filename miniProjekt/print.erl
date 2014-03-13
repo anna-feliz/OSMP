@@ -1,7 +1,7 @@
 %% @author Fredrik Larsson
 -module(print).
 
--export([print/4]).
+-export([print/5]).
 %% @doc Prints the addition of two integers and the possible
 %% carry over for each single digit addition.
 %% 
@@ -15,16 +15,18 @@
 %%   187
 %%    35
 %% + ---
-%%   222'''
+%%   222
+%%   ok'''
 %% </div>
--spec print(A, B, Result, Carry) -> ok when
-      A :: [Int],
-      B :: [Int],
-      Result :: [Int],
-      Carry :: [Int],
-      Int :: integer().
+-spec print(A, B, Result, Carry, Base) -> ok when
+      A :: list(),
+      B :: list(),
+      Result :: list(),
+      Carry :: list(),
+      Base :: integer().
+      %% Int :: integer().
 
-print(A, B, Result, Carry) ->
+print(A, B, Result, Carry, Base) ->
     %% Rad 1 ska det printas en rad med carrys
     %% Rad 2 ska vara "-"-tecken på samma ställen som carry-siffran är 1.
     %% Rad 3 är det första talet, eller blir det snyggare att ta det längre???
@@ -32,6 +34,11 @@ print(A, B, Result, Carry) ->
     %% Rad 5 är ett plusteckan följt av |Result| antal "-"-tecken.
     %% Rad 6 är svaret på additionen.
     
+    %% Rad 0:
+    printSpace(),
+    io:format("Addition done in base: ~p", [Base]),
+    printNewLine(),
+
     %% Rad 1:
     printSpace(),
     printL1(Carry),
@@ -71,8 +78,10 @@ print(A, B, Result, Carry) ->
 
 printSpace() ->
     io:format(" ").
+
 printNewLine() ->
     io:format("~n").
+
 printL1([])->
     io:format("~n");
 printL1([H|T]) ->
@@ -115,8 +124,8 @@ repeat(Char, N) ->
 
 intToChar(Int) when Int >= 0, Int =< 9 ->
     [Int+48];
-intToChar(Int) when Int >= 65, Int =< 90 ->
-    [Int];
+intToChar(Int) when Int >= 10, Int =< 15 -> %% ???
+    [Int+55];
 intToChar(_) ->
     erlang:error(error,nAN).
  
