@@ -1,0 +1,3 @@
+gcc -c -pthread -Wall -Wextra -std=c99 -D_XOPEN_SOURCE=600 -O2 bst_test.c -o bst_test.o
+gcc -MM -pthread -Wall -Wextra -std=c99 -D_XOPEN_SOURCE=600 -O2 bst_test.c > bst_test.d
+gcc -O2  bst_test.o bst.o timing.o  -pthread -lrt -o bst_test
