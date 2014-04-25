@@ -1,18 +1,13 @@
 -module(start).
 -export([start/3, start/4, splitLists/3, splitLists/4, isIn/2]).
 
-%% To use EUnit we must include this:
--include_lib("eunit/include/eunit.hrl").
-
-
-
 %@doc 
 start (A, B, Base) ->
     start (A, B, Base, []).
 
 
 %doc returns ok. 
-% Base is in which number base A and B are represented, Options is the options that can be chosen.   
+% A, B are lists with 1 digit integers to be added together, Base is in which number base A and B are represented, Options is the options that can be chosen.   
 %option: speculative, {sleep, Min, Max}, {numberOfLists, N} 
 -spec start(A, B, Base, Options) -> ok when 
       A::list(),
@@ -32,7 +27,7 @@ start (AInt, BInt, Base, Options) ->
 	    {_numberOfLists, N} = lists:nth(Place, Options),
 	    divideListsAndStart(A, B, Base, N, isIn(speculative, Options))
     end,
-    ok.
+    startok.
 
 %startar en ny process med PID CollectPID, som arbetar med att samla ihop all data.
 -spec divideListsAndStart(A, B, Base, N, Speculative) -> ok when
@@ -49,7 +44,7 @@ divideListsAndStart (A, B, Base, N, Speculative) ->
     CollectPID = spawn(fun() -> collect(A, B, N, [], []) end),
     MyPID = self(),
     spawn(fun() -> spawn_actors (Lists, Base, CollectPID, Speculative, MyPID, MyPID) end),
-    ok.
+    divideListAndStartok.
 
 
 
@@ -70,7 +65,7 @@ spawn_actors ([], _Base, CollectPID, _Speculative, ParentPID, SuperParentPID) ->
 	true ->
 	    CollectPID ! {carry, 0}
     end,
-    ok;
+    lastLinkok;
 spawn_actors ([H|T], Base, CollectPID, Speculative, ParentPID, SuperParentPID) ->
     MyPID = self(),
     spawn(fun() -> spawn_actors (T, Base, CollectPID, Speculative, MyPID, SuperParentPID) end),
@@ -116,7 +111,7 @@ spawn_actors ([H|T], Base, CollectPID, Speculative, ParentPID, SuperParentPID) -
 		    io:format("Du är cool", [])
 	    end
     end,
-    ok.
+    spawnActorsok.
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -140,22 +135,27 @@ isIn(Elem, List) ->
 
 isIn(_Elem, [], _N) -> 
     false;
-isIn(Elem, [H|T], N) -> 
-    case speculative == H of
-	true -> 
-	    case H == Elem of
+isIn(Elem, [H|T], N) ->
+    case Elem of
+	speculative ->
+	    case H == speculative of
 		true ->
 		    true;
 		false ->
 		    isIn(Elem, T, N+1)
 	    end;
-	false ->
-	    case (element(1, H) == Elem) of
+	_ ->
+	    case speculative == H of
 		true ->
-		    N;
+		    isIn(Elem, T, N+1);
 		false ->
-		    isIn(Elem, T, N+1)
-	    end	 
+		    case (element(1, H) == Elem) of
+			true ->
+			    N;
+			false ->
+			    isIn(Elem, T, N+1)
+		    end
+	    end
     end.
 
 
@@ -215,8 +215,26 @@ collect(A, B, N, FinalResults, FinalCarryOut, Count) when N >= Count ->
 	    collect(A, B, N, lists:append([Results, FinalResults]), lists:append([CarryOut, FinalCarryOut]), Count+1)
     end; 
 collect(A, B, _NumberOfListsToWaitfor, Results, CarryOut, _Count) -> 
-    io:format("A: ~p \nB: ~p \nResults: ~p\nCarryOut: ~p\n", [A, B, Results, CarryOut]),
-    ok.
+    io:format("A: ~p \nB: ~p \nResults: ~p\nCarryOut: ~p\n", [A, B, Results, CarryOut]).
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%                              splitLists/3                               %
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 
 -spec splitLists(A, B, N) -> list() when
@@ -268,19 +286,3 @@ addZeros(N, List) ->
     addZeros(N, [0|List]).
 
 
-
-
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%%%%%%%%%%%%%%%%%%% Eunit test cases  %%%%%%%%%%%%%%%%%%%%
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-%% EUnit adds the fifo:test() function to this module. 
-
-%% All functions with names ending wiht _test() or _test_() will be
-%% called automatically by fifo:test()
-
-
-intToList_test_() -> 
-    [?_assertEqual([], intToList(0)),
-     ?_assertEqual([1, 2, 3, 4], intToList(1234))].
