@@ -25,9 +25,11 @@ class TCPClient(Name: String) extends Actor {
   var name = Name
   val manager = IO(Tcp)
   var connection: Option[ActorRef] = None
+  
   override def preStart() = {
     manager ! Connect(new InetSocketAddress("localhost", 1337))
   }
+  
   def receive = {
     case Received(msg) => {
       val dec = msg.decodeString(java.nio.charset.Charset.defaultCharset().name())

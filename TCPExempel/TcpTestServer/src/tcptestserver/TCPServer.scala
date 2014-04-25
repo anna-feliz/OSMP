@@ -23,6 +23,7 @@ class TCPServer extends Actor {
   override def preStart() = {
     manager ! Bind(self, new InetSocketAddress("localhost", 1337))
   }
+
   def receive = {
     case ShutDown =>
       Connections foreach (c => c ! Close)
