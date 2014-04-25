@@ -111,7 +111,7 @@ printNum(L) ->
 printNum([],_) ->
     io:format("~n");
 printNum([H|T], X) when H == 0, X == 0 ->
-    io:format(" "),
+    io:format("~c",[32]),
     printNum(T, 0);
 printNum([H|T], _) ->
     io:format(intToChar(H)),
