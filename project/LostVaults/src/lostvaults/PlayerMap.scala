@@ -1,20 +1,24 @@
 package lostvaults
-import akka.actor.{ Actor, ActorRef }
+import akka.actor.{ Actor, ActorRef, Props }
 import scala.collection.mutable.HashMap
 
 sealed trait PMapMsg
 case class PMapAddPlayer(name: String, ref: ActorRef) extends PMapMsg
 case class PMapRemovePlayer(name: String) extends PMapMsg
-case class PMapGetPlayer(name: String) extends PMapMsg
-case class PMapGetPlayerResponse(player: Option[ActorRef]) extends PMapMsg
-case class PMapIsOnline(name: String) extends PMapMsg
-case class PMapIsOnlineResponse(online: Boolean) extends PMapMsg
+case class PMapGetPlayer(name: String, purpose: String) extends PMapMsg
+case class PMapGetPlayerResponse(player: Option[ActorRef], purpose: String) extends PMapMsg
+case class PMapIsOnline(name: String, purpose: String) extends PMapMsg
+case class PMapIsOnlineResponse(online: Boolean, purpose: String) extends PMapMsg
 case object PMapSuccess extends PMapMsg
 case object PMapFailure extends PMapMsg
 
-object PlayerMap extends Actor {
-  var PMap: HashMap[String, ActorRef] = HashMap()
+object PlayerMap {
+  val instance = new PlayerMap
+  def props(): Props = Props(new PlayerMap())
+}
 
+class PlayerMap extends Actor {
+  var PMap: HashMap[String, ActorRef] = HashMap()
   def receive() = {
     case PMapAddPlayer(name: String, ref: ActorRef) => {
       val exist = PMap.find((A: Tuple2[String, ActorRef]) => A._1 == name)
@@ -34,16 +38,16 @@ object PlayerMap extends Actor {
         sender ! PMapSuccess
       }
     }
-    case PMapGetPlayer(name: String) => {
+    case PMapGetPlayer(name: String, purpose: String) => {
       val exist = PMap.find((A: Tuple2[String, ActorRef]) => A._1 == name)
       if (exist.isEmpty)
-        sender ! PMapGetPlayerResponse(None)
+        sender ! PMapGetPlayerResponse(None, purpose)
       else
-        sender ! PMapGetPlayerResponse(Some((exist.get)._2))
+        sender ! PMapGetPlayerResponse(Some((exist.get)._2), purpose)
     }
-    case PMapIsOnline(name: String) => {
+    case PMapIsOnline(name: String, purpose: String) => {
       val exist = PMap.find((A: Tuple2[String, ActorRef]) => A._1 == name)
-      sender ! PMapIsOnlineResponse(!exist.isEmpty)
+      sender ! PMapIsOnlineResponse(!exist.isEmpty, purpose)
     }
   }
 }
